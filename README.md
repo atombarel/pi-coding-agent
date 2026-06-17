@@ -6,7 +6,8 @@ This repo gives you:
 
 - A TypeScript CLI named `pi`
 - A core runtime that composes prompts, loads extensions, registers tools, and talks to a provider
-- An extension SDK for adding tools and system instructions
+- An extension SDK for adding tools, system instructions, and skills
+- A base extension with starter skills like `codex-goal`, `rtk`, and `extension-author`
 - A sample `repo-inspector` extension
 - Tests and GitHub Actions CI
 
@@ -16,6 +17,8 @@ This repo gives you:
 npm install
 npm run build
 npm run dev -- run "summarize this repo" --extension ./examples/extensions/repo-inspector/src/index.ts
+npm run dev -- skills --extension ./extensions/base/src/index.ts
+npm run dev -- run "add a Redux Toolkit slice" --extension ./extensions/base/src/index.ts --skill rtk
 ```
 
 The default provider is `echo`, so the command works without API keys. To call an OpenAI-compatible endpoint:
@@ -34,6 +37,8 @@ packages/
   cli/             command line app
   core/            runtime, providers, extension loading
   extension-sdk/   public types and helpers for extensions
+extensions/
+  base/            first-party starter skills
 examples/
   extensions/
     repo-inspector/
@@ -50,6 +55,14 @@ export default defineExtension({
   id: "my-extension",
   displayName: "My Extension",
   systemPrompt: "Prefer tiny, reversible changes.",
+  skills: [
+    {
+      id: "my-skill",
+      title: "My Skill",
+      description: "A focused operating mode.",
+      prompt: "Use this mode for one specific workflow."
+    }
+  ],
   tools: [
     {
       name: "hello",

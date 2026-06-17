@@ -1,6 +1,10 @@
 {
   "extensions": [
+    "./extensions/base/dist/index.js",
     "./examples/extensions/repo-inspector/dist/index.js"
+  ],
+  "skills": [
+    "codex-goal"
   ],
   "provider": "echo",
   "model": "gpt-4.1-mini"

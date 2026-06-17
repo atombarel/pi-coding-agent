@@ -4,6 +4,7 @@
     { "path": "./packages/extension-sdk" },
     { "path": "./packages/core" },
     { "path": "./packages/cli" },
+    { "path": "./extensions/base" },
     { "path": "./examples/extensions/repo-inspector" }
   ]
 }

@@ -10,6 +10,7 @@ interface CliOptions {
   provider: string;
   model?: string;
   extensions: string[];
+  skills: string[];
 }
 
 async function main(argv: string[]): Promise<void> {
@@ -27,6 +28,11 @@ async function main(argv: string[]): Promise<void> {
 
   if (options.command === "extensions") {
     await listExtensions(options);
+    return;
+  }
+
+  if (options.command === "skills") {
+    await listSkills(options);
     return;
   }
 
@@ -58,6 +64,20 @@ async function listExtensions(options: CliOptions): Promise<void> {
   }
 }
 
+async function listSkills(options: CliOptions): Promise<void> {
+  const runtime = await createRuntime(options);
+  const skills = runtime.listSkills();
+
+  if (skills.length === 0) {
+    process.stdout.write("No skills loaded.\n");
+    return;
+  }
+
+  for (const skill of skills) {
+    process.stdout.write(`${skill.id} - ${skill.title}: ${skill.description}\n`);
+  }
+}
+
 async function createRuntime(options: CliOptions): Promise<AgentRuntime> {
   const extensions = await Promise.all(
     options.extensions.map((extensionPath) => loadExtension(extensionPath, options.cwd))
@@ -67,7 +87,8 @@ async function createRuntime(options: CliOptions): Promise<AgentRuntime> {
     cwd: options.cwd,
     provider: createProvider(options),
     model: options.model,
-    extensions
+    extensions,
+    skillIds: options.skills
   });
 }
 
@@ -98,7 +119,8 @@ function parseArgs(argv: string[]): CliOptions {
     cwd: process.cwd(),
     provider: process.env.PI_PROVIDER ?? "echo",
     model: process.env.PI_MODEL,
-    extensions: []
+    extensions: [],
+    skills: []
   };
 
   const args = [...argv];
@@ -119,6 +141,8 @@ function parseArgs(argv: string[]): CliOptions {
       options.model = requireValue(args, "--model");
     } else if (arg === "--extension") {
       options.extensions.push(requireValue(args, "--extension"));
+    } else if (arg === "--skill") {
+      options.skills.push(requireValue(args, "--skill"));
     } else if (arg === "--help" || arg === "-h") {
       options.command = "help";
     } else if (arg) {
@@ -145,10 +169,12 @@ function printHelp(): void {
 Usage:
   pi run "prompt" [--cwd path] [--provider echo|openai] [--model model] [--extension path]
   pi extensions [--extension path]
+  pi skills [--extension path]
 
 Examples:
   pi run "summarize this repo"
   pi run "inspect the project" --extension ./examples/extensions/repo-inspector/dist/index.js
+  pi run "build an RTK slice" --extension ./extensions/base/dist/index.js --skill rtk
 `);
 }
 

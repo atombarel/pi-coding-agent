@@ -19,11 +19,19 @@ export interface AgentTool {
   execute(args: JsonObject, context: ToolContext): Promise<ToolResult> | ToolResult;
 }
 
+export interface AgentSkill {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+}
+
 export interface PiExtension {
   id: string;
   displayName?: string;
   systemPrompt?: string;
   tools?: AgentTool[];
+  skills?: AgentSkill[];
 }
 
 export function defineExtension(extension: PiExtension): PiExtension {

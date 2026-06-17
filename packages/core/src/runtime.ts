@@ -1,4 +1,4 @@
-import type { PiExtension } from "@pi/extension-sdk";
+import type { AgentSkill, PiExtension } from "@pi/extension-sdk";
 import type { AgentProvider, ProviderResponse } from "./providers.js";
 import { ToolRegistry } from "./tool-registry.js";
 
@@ -7,6 +7,7 @@ export interface AgentRuntimeOptions {
   provider: AgentProvider;
   model?: string;
   extensions?: PiExtension[];
+  skillIds?: string[];
 }
 
 export interface AgentRunResult {
@@ -27,6 +28,7 @@ export class AgentRuntime {
   private readonly provider: AgentProvider;
   private readonly model?: string;
   private readonly extensions: PiExtension[];
+  private readonly skillIds: string[];
   private readonly registry = new ToolRegistry();
 
   constructor(options: AgentRuntimeOptions) {
@@ -34,6 +36,7 @@ export class AgentRuntime {
     this.provider = options.provider;
     this.model = options.model;
     this.extensions = options.extensions ?? [];
+    this.skillIds = options.skillIds ?? [];
 
     for (const extension of this.extensions) {
       for (const tool of extension.tools ?? []) {
@@ -61,12 +64,38 @@ export class AgentRuntime {
     return this.registry.list();
   }
 
+  listSkills(): AgentSkill[] {
+    return this.extensions.flatMap((extension) => extension.skills ?? []);
+  }
+
   private systemPrompt(): string {
     const extensionPrompts = this.extensions
       .map((extension) => extension.systemPrompt)
       .filter((prompt): prompt is string => Boolean(prompt));
 
-    return [BASE_SYSTEM_PROMPT, ...extensionPrompts].join("\n\n");
+    const skillPrompts = this.selectedSkills().map((skill) => [
+      `Skill: ${skill.title} (${skill.id})`,
+      skill.prompt
+    ].join("\n"));
+
+    return [BASE_SYSTEM_PROMPT, ...extensionPrompts, ...skillPrompts].join("\n\n");
+  }
+
+  private selectedSkills(): AgentSkill[] {
+    if (this.skillIds.length === 0) {
+      return [];
+    }
+
+    const skillsById = new Map(this.listSkills().map((skill) => [skill.id, skill]));
+    return this.skillIds.map((skillId) => {
+      const skill = skillsById.get(skillId);
+
+      if (!skill) {
+        throw new Error(`Skill "${skillId}" is not available. Load an extension that provides it.`);
+      }
+
+      return skill;
+    });
   }
 
   private formatResult(response: ProviderResponse): AgentRunResult {

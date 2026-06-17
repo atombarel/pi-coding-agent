@@ -5,7 +5,7 @@ Pi starts as a local coding agent with a deliberately small kernel.
 ## Principles
 
 - The core owns orchestration, provider calls, extension loading, permissions, and session state.
-- Extensions own domain-specific tools, extra instructions, and workflow shortcuts.
+- Extensions own domain-specific tools, extra instructions, skills, and workflow shortcuts.
 - Providers are adapters. The rest of the agent should not care whether the model is OpenAI, local, hosted, or something else.
 - Dangerous capabilities must pass through a permission layer before they become default behavior.
 
@@ -14,8 +14,9 @@ Pi starts as a local coding agent with a deliberately small kernel.
 1. The CLI parses a user prompt and runtime options.
 2. The extension loader imports configured extensions.
 3. The runtime registers extension tools and merges system instructions.
-4. The provider receives a composed prompt.
-5. Later versions will let the provider request tool calls through the runtime.
+4. Selected skills are appended as focused operating-mode instructions.
+5. The provider receives a composed prompt.
+6. Later versions will let the provider request tool calls through the runtime.
 
 ## Extension Contract
 
@@ -23,8 +24,20 @@ An extension can provide:
 
 - `systemPrompt`: guidance appended to the runtime prompt.
 - `tools`: callable capabilities with names, descriptions, optional JSON schemas, and execute handlers.
+- `skills`: named instruction bundles that can be activated for a single run.
 
 Extensions should be ordinary npm packages whenever possible. Local file extensions are supported for fast iteration.
+
+## Skill Contract
+
+A skill is a lightweight operating mode:
+
+- `id`: stable command-line identifier, such as `codex-goal` or `rtk`.
+- `title`: human-friendly label.
+- `description`: one-line purpose shown by `pi skills`.
+- `prompt`: focused instructions appended only when the skill is selected.
+
+Skills should be narrow. Prefer several small skills over one broad "do everything" prompt.
 
 ## Near-Term Build Plan
 
