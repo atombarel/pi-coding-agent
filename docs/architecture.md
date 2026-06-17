@@ -7,7 +7,7 @@ Pi starts as a local coding agent with a deliberately small kernel.
 - The core owns orchestration, provider calls, extension loading, permissions, and session state.
 - Extensions own domain-specific tools, extra instructions, skills, and workflow shortcuts.
 - Providers are adapters. The rest of the agent should not care whether the model is OpenAI, local, hosted, or something else.
-- Provider profiles make switching cheap: `echo` for no-key local testing, `openai` for the direct API path, and `openrouter` for routed multi-model access.
+- Provider profiles make switching cheap: `echo` for no-key local testing, `codex` for Codex OAuth/subscription access through the Codex CLI, `openai` for the direct API-key path, and `openrouter` for routed multi-model access.
 - Dangerous capabilities must pass through a permission layer before they become default behavior.
 
 ## Runtime Flow
@@ -49,6 +49,10 @@ Skills should be narrow. Prefer several small skills over one broad "do everythi
   "activeProfile": "echo",
   "profiles": {
     "codex": {
+      "provider": "codex",
+      "codexSandbox": "workspace-write"
+    },
+    "openai-api": {
       "provider": "openai",
       "model": "gpt-4.1-mini"
     },

@@ -21,7 +21,18 @@ npm run dev -- skills --extension ./extensions/base/src/index.ts
 npm run dev -- run "add a Redux Toolkit slice" --extension ./extensions/base/src/index.ts --skill rtk
 ```
 
-The default provider is `echo`, so the command works without API keys. To call an OpenAI-compatible endpoint:
+The default provider is `echo`, so the command works without API keys.
+
+To use your Codex OAuth / ChatGPT subscription login, sign in once with the Codex CLI:
+
+```bash
+codex login
+npm run dev -- run "what should I build next?" --provider codex
+```
+
+The `codex` provider delegates to `codex exec`, so it uses Codex's existing browser login, cached credentials, token refresh, workspace controls, and subscription access.
+
+To call OpenAI through the API-key path instead:
 
 ```bash
 export OPENAI_API_KEY=...
@@ -42,7 +53,8 @@ For everyday switching, copy `pi.config.example.json` to `pi.config.json` and us
 ```bash
 npm run dev -- run "use my default profile"
 npm run dev -- run "try OpenRouter" --profile openrouter
-PI_PROFILE=codex npm run dev -- run "use the OpenAI profile"
+PI_PROFILE=codex npm run dev -- run "use the Codex OAuth profile"
+PI_PROFILE=openai-api npm run dev -- run "use the OpenAI API-key profile"
 ```
 
 ## Project Shape

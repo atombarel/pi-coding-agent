@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
   AgentRuntime,
+  CodexCliProvider,
   EchoProvider,
   loadExtension,
   OpenAIResponsesProvider,
@@ -19,6 +20,8 @@ interface CliOptions {
   provider?: string;
   model?: string;
   baseUrl?: string;
+  codexProfile?: string;
+  codexSandbox?: "read-only" | "workspace-write" | "danger-full-access";
   extensions: string[];
   skills: string[];
 }
@@ -31,6 +34,8 @@ interface ProviderProfile {
   provider?: string;
   model?: string;
   baseUrl?: string;
+  codexProfile?: string;
+  codexSandbox?: "read-only" | "workspace-write" | "danger-full-access";
 }
 
 interface PiConfig {
@@ -141,6 +146,13 @@ function createProvider(options: ResolvedCliOptions): AgentProvider {
     });
   }
 
+  if (options.provider === "codex") {
+    return new CodexCliProvider({
+      profile: options.codexProfile,
+      sandbox: options.codexSandbox
+    });
+  }
+
   if (options.provider === "openrouter") {
     const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -189,6 +201,10 @@ function parseArgs(argv: string[]): CliOptions {
       options.model = requireValue(args, "--model");
     } else if (arg === "--base-url") {
       options.baseUrl = requireValue(args, "--base-url");
+    } else if (arg === "--codex-profile") {
+      options.codexProfile = requireValue(args, "--codex-profile");
+    } else if (arg === "--codex-sandbox") {
+      options.codexSandbox = parseCodexSandbox(requireValue(args, "--codex-sandbox"));
     } else if (arg === "--extension") {
       options.extensions.push(requireValue(args, "--extension"));
     } else if (arg === "--skill") {
@@ -229,6 +245,12 @@ async function resolveOptions(options: CliOptions): Promise<ResolvedCliOptions> 
     baseUrl: options.baseUrl
       ?? process.env.PI_BASE_URL
       ?? profile?.baseUrl,
+    codexProfile: options.codexProfile
+      ?? process.env.PI_CODEX_PROFILE
+      ?? profile?.codexProfile,
+    codexSandbox: options.codexSandbox
+      ?? parseOptionalCodexSandbox(process.env.PI_CODEX_SANDBOX)
+      ?? profile?.codexSandbox,
     extensions: [
       ...(config.extensions ?? []),
       ...options.extensions
@@ -271,6 +293,22 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && "code" in error;
 }
 
+function parseOptionalCodexSandbox(value: string | undefined): CliOptions["codexSandbox"] {
+  if (!value) {
+    return undefined;
+  }
+
+  return parseCodexSandbox(value);
+}
+
+function parseCodexSandbox(value: string): NonNullable<CliOptions["codexSandbox"]> {
+  if (value === "read-only" || value === "workspace-write" || value === "danger-full-access") {
+    return value;
+  }
+
+  throw new Error(`Invalid Codex sandbox "${value}". Expected read-only, workspace-write, or danger-full-access.`);
+}
+
 function requireValue(args: string[], flag: string): string {
   const value = args.shift();
 
@@ -285,12 +323,13 @@ function printHelp(): void {
   process.stdout.write(`Pi Coding Agent
 
 Usage:
-  pi run "prompt" [--cwd path] [--config path] [--profile name] [--provider echo|openai|openrouter] [--model model] [--base-url url] [--extension path] [--skill id]
+  pi run "prompt" [--cwd path] [--config path] [--profile name] [--provider echo|codex|openai|openrouter] [--model model] [--base-url url] [--codex-profile name] [--codex-sandbox mode] [--extension path] [--skill id]
   pi extensions [--extension path]
   pi skills [--extension path]
 
 Examples:
   pi run "summarize this repo"
+  pi run "use my Codex subscription" --profile codex
   pi run "compare providers" --profile openrouter
   pi run "inspect the project" --extension ./examples/extensions/repo-inspector/dist/index.js
   pi run "build an RTK slice" --extension ./extensions/base/dist/index.js --skill rtk

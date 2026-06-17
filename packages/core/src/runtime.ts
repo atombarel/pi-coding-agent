@@ -50,6 +50,7 @@ export class AgentRuntime {
       prompt,
       systemPrompt: this.systemPrompt(),
       tools: this.registry.list(),
+      cwd: this.cwd,
       model: this.model
     });
 

@@ -1,9 +1,11 @@
+import { spawn } from "node:child_process";
 import type { AgentTool } from "@pi/extension-sdk";
 
 export interface ProviderRequest {
   prompt: string;
   systemPrompt: string;
   tools: AgentTool[];
+  cwd: string;
   model?: string;
 }
 
@@ -35,6 +37,69 @@ export class EchoProvider implements AgentProvider {
         "User prompt:",
         request.prompt
       ].join("\n")
+    };
+  }
+}
+
+export interface CodexCliProviderOptions {
+  command?: string;
+  profile?: string;
+  sandbox?: "read-only" | "workspace-write" | "danger-full-access";
+}
+
+export class CodexCliProvider implements AgentProvider {
+  readonly name = "codex";
+  private readonly command: string;
+  private readonly profile?: string;
+  private readonly sandbox?: "read-only" | "workspace-write" | "danger-full-access";
+
+  constructor(options: CodexCliProviderOptions = {}) {
+    this.command = options.command ?? "codex";
+    this.profile = options.profile;
+    this.sandbox = options.sandbox;
+  }
+
+  async complete(request: ProviderRequest): Promise<ProviderResponse> {
+    const args = [
+      "exec",
+      "--color",
+      "never",
+      "--skip-git-repo-check",
+      "-C",
+      request.cwd
+    ];
+
+    if (request.model) {
+      args.push("-m", request.model);
+    }
+
+    if (this.profile) {
+      args.push("-p", this.profile);
+    }
+
+    if (this.sandbox) {
+      args.push("--sandbox", this.sandbox);
+    }
+
+    args.push("-");
+
+    const input = [
+      "<pi_runtime_instructions>",
+      request.systemPrompt,
+      "</pi_runtime_instructions>",
+      "",
+      "<user_prompt>",
+      request.prompt,
+      "</user_prompt>"
+    ].join("\n");
+
+    const result = await runProcess(this.command, args, input, request.cwd);
+
+    return {
+      content: result.stdout.trim(),
+      raw: {
+        stderr: result.stderr.trim()
+      }
     };
   }
 }
@@ -149,4 +214,39 @@ export class OpenRouterProvider implements AgentProvider {
       raw: body
     };
   }
+}
+
+interface ProcessResult {
+  stdout: string;
+  stderr: string;
+}
+
+function runProcess(command: string, args: string[], input: string, cwd: string): Promise<ProcessResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+
+    child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      const output = {
+        stdout: Buffer.concat(stdout).toString("utf8"),
+        stderr: Buffer.concat(stderr).toString("utf8")
+      };
+
+      if (code === 0) {
+        resolve(output);
+        return;
+      }
+
+      reject(new Error(`Codex CLI failed with exit code ${code}: ${output.stderr || output.stdout}`));
+    });
+
+    child.stdin.end(input);
+  });
 }
