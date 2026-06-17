@@ -1,5 +1,5 @@
 import type { AgentSkill, PiExtension } from "@pi/extension-sdk";
-import type { AgentProvider, ProviderResponse } from "./providers.js";
+import type { AgentProvider, AgentProviderSession, ProviderRequest, ProviderResponse } from "./providers.js";
 import { ToolRegistry } from "./tool-registry.js";
 
 export interface AgentRuntimeOptions {
@@ -46,15 +46,13 @@ export class AgentRuntime {
   }
 
   async run(prompt: string): Promise<AgentRunResult> {
-    const response = await this.provider.complete({
-      prompt,
-      systemPrompt: this.systemPrompt(),
-      tools: this.registry.list(),
-      cwd: this.cwd,
-      model: this.model
-    });
+    const response = await this.provider.complete(this.providerRequest(prompt));
 
     return this.formatResult(response);
+  }
+
+  startSession(): AgentRuntimeSession {
+    return new AgentRuntimeSession(this, this.provider.startSession?.());
   }
 
   listExtensions(): PiExtension[] {
@@ -67,6 +65,16 @@ export class AgentRuntime {
 
   listSkills(): AgentSkill[] {
     return this.extensions.flatMap((extension) => extension.skills ?? []);
+  }
+
+  providerRequest(prompt: string): ProviderRequest {
+    return {
+      prompt,
+      systemPrompt: this.systemPrompt(),
+      tools: this.registry.list(),
+      cwd: this.cwd,
+      model: this.model
+    };
   }
 
   private systemPrompt(): string {
@@ -99,12 +107,28 @@ export class AgentRuntime {
     });
   }
 
-  private formatResult(response: ProviderResponse): AgentRunResult {
+  formatResult(response: ProviderResponse): AgentRunResult {
     return {
       content: response.content,
       provider: this.provider.name,
       toolCount: this.registry.list().length,
       raw: response.raw
     };
+  }
+}
+
+export class AgentRuntimeSession {
+  constructor(
+    private readonly runtime: AgentRuntime,
+    private readonly providerSession: AgentProviderSession | undefined
+  ) {}
+
+  async run(prompt: string): Promise<AgentRunResult> {
+    const request = this.runtime.providerRequest(prompt);
+    const response = this.providerSession
+      ? await this.providerSession.complete(request)
+      : await this.runtime.run(prompt);
+
+    return this.runtime.formatResult(response);
   }
 }

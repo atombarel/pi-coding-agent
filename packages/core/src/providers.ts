@@ -19,6 +19,11 @@ export interface ProviderResponse {
 export interface AgentProvider {
   name: string;
   complete(request: ProviderRequest): Promise<ProviderResponse>;
+  startSession?(): AgentProviderSession;
+}
+
+export interface AgentProviderSession {
+  complete(request: ProviderRequest): Promise<ProviderResponse>;
 }
 
 export class EchoProvider implements AgentProvider {
@@ -39,6 +44,26 @@ export class EchoProvider implements AgentProvider {
         "User prompt:",
         request.prompt
       ].join("\n")
+    };
+  }
+
+  startSession(): AgentProviderSession {
+    return new EchoProviderSession(this);
+  }
+}
+
+class EchoProviderSession implements AgentProviderSession {
+  private turn = 0;
+
+  constructor(private readonly provider: EchoProvider) {}
+
+  async complete(request: ProviderRequest): Promise<ProviderResponse> {
+    this.turn += 1;
+    const response = await this.provider.complete(request);
+
+    return {
+      ...response,
+      content: [`Turn: ${this.turn}`, "", response.content].join("\n")
     };
   }
 }
@@ -123,6 +148,17 @@ export class CodexSdkProvider implements AgentProvider {
 
   async complete(request: ProviderRequest): Promise<ProviderResponse> {
     const codex = new Codex();
+    const thread = codex.startThread(this.threadOptions(request));
+    const turn = await thread.run(this.input(request));
+
+    return this.result(thread.id, turn);
+  }
+
+  startSession(): AgentProviderSession {
+    return new CodexSdkProviderSession(this);
+  }
+
+  threadOptions(request: ProviderRequest): ThreadOptions {
     const threadOptions: ThreadOptions = {
       workingDirectory: request.cwd,
       skipGitRepoCheck: this.skipGitRepoCheck
@@ -136,10 +172,13 @@ export class CodexSdkProvider implements AgentProvider {
       threadOptions.sandboxMode = this.sandboxMode;
     }
 
-    const thread = codex.startThread(threadOptions);
-    const turn = await thread.run([
+    return threadOptions;
+  }
+
+  input(request: ProviderRequest) {
+    return [
       {
-        type: "text",
+        type: "text" as const,
         text: [
           "<pi_runtime_instructions>",
           request.systemPrompt,
@@ -150,16 +189,31 @@ export class CodexSdkProvider implements AgentProvider {
           "</user_prompt>"
         ].join("\n")
       }
-    ]);
+    ];
+  }
 
+  result(threadId: string | null, turn: Awaited<ReturnType<ReturnType<Codex["startThread"]>["run"]>>): ProviderResponse {
     return {
       content: turn.finalResponse,
       raw: {
-        threadId: thread.id,
+        threadId,
         usage: turn.usage,
         items: turn.items
       }
     };
+  }
+}
+
+class CodexSdkProviderSession implements AgentProviderSession {
+  private thread: ReturnType<Codex["startThread"]> | undefined;
+
+  constructor(private readonly provider: CodexSdkProvider) {}
+
+  async complete(request: ProviderRequest): Promise<ProviderResponse> {
+    this.thread ??= new Codex().startThread(this.provider.threadOptions(request));
+    const turn = await this.thread.run(this.provider.input(request));
+
+    return this.provider.result(this.thread.id, turn);
   }
 }
 
@@ -232,7 +286,14 @@ export class OpenRouterProvider implements AgentProvider {
     this.appTitle = options.appTitle;
   }
 
-  async complete(request: ProviderRequest): Promise<ProviderResponse> {
+  startSession(): AgentProviderSession {
+    return new OpenRouterProviderSession(this);
+  }
+
+  async completeMessages(
+    request: ProviderRequest,
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>
+  ): Promise<ProviderResponse> {
     const headers: Record<string, string> = {
       "Authorization": `Bearer ${this.apiKey}`,
       "Content-Type": "application/json"
@@ -251,10 +312,7 @@ export class OpenRouterProvider implements AgentProvider {
       headers,
       body: JSON.stringify({
         model: request.model ?? this.model,
-        messages: [
-          { role: "system", content: request.systemPrompt },
-          { role: "user", content: request.prompt }
-        ]
+        messages
       })
     });
 
@@ -272,6 +330,31 @@ export class OpenRouterProvider implements AgentProvider {
       content: content ?? JSON.stringify(body, null, 2),
       raw: body
     };
+  }
+
+  async complete(request: ProviderRequest): Promise<ProviderResponse> {
+    return this.completeMessages(request, [
+      { role: "system", content: request.systemPrompt },
+      { role: "user", content: request.prompt }
+    ]);
+  }
+}
+
+class OpenRouterProviderSession implements AgentProviderSession {
+  private readonly messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [];
+
+  constructor(private readonly provider: OpenRouterProvider) {}
+
+  async complete(request: ProviderRequest): Promise<ProviderResponse> {
+    if (this.messages.length === 0) {
+      this.messages.push({ role: "system", content: request.systemPrompt });
+    }
+
+    this.messages.push({ role: "user", content: request.prompt });
+    const response = await this.provider.completeMessages(request, this.messages);
+    this.messages.push({ role: "assistant", content: response.content });
+
+    return response;
   }
 }
 

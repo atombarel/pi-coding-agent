@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { createInterface } from "node:readline/promises";
 import {
   AgentRuntime,
   CodexCliProvider,
@@ -62,6 +63,11 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
+  if (options.command === "tui") {
+    await runTui(options);
+    return;
+  }
+
   if (options.command === "extensions") {
     await listExtensions(options);
     return;
@@ -85,8 +91,82 @@ async function runAgent(options: ResolvedCliOptions): Promise<void> {
   process.stdout.write(`${result.content}\n`);
 }
 
+async function runTui(options: ResolvedCliOptions): Promise<void> {
+  const runtime = await createRuntime(options);
+  const session = runtime.startSession();
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: Boolean(process.stdin.isTTY && process.stdout.isTTY)
+  });
+
+  printTuiHeader(options);
+
+  try {
+    while (true) {
+      const input = (await rl.question("pi> ")).trim();
+
+      if (!input) {
+        continue;
+      }
+
+      if (input === "/exit" || input === "/quit") {
+        process.stdout.write("bye\n");
+        return;
+      }
+
+      if (input === "/help") {
+        printTuiHelp();
+        continue;
+      }
+
+      if (input === "/clear") {
+        console.clear();
+        printTuiHeader(options);
+        continue;
+      }
+
+      if (input === "/status") {
+        printRuntimeStatus(options, runtime);
+        continue;
+      }
+
+      if (input === "/extensions") {
+        printExtensions(runtime);
+        continue;
+      }
+
+      if (input === "/skills") {
+        printSkills(runtime);
+        continue;
+      }
+
+      if (input === "/tools") {
+        printTools(runtime);
+        continue;
+      }
+
+      process.stdout.write("\nPi is thinking...\n\n");
+
+      try {
+        const result = await session.run(input);
+        process.stdout.write(`${result.content.trim()}\n\n`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        process.stdout.write(`Error: ${message}\n\n`);
+      }
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 async function listExtensions(options: ResolvedCliOptions): Promise<void> {
   const runtime = await createRuntime(options);
+  printExtensions(runtime);
+}
+
+function printExtensions(runtime: AgentRuntime): void {
   const extensions = runtime.listExtensions();
 
   if (extensions.length === 0) {
@@ -102,6 +182,10 @@ async function listExtensions(options: ResolvedCliOptions): Promise<void> {
 
 async function listSkills(options: ResolvedCliOptions): Promise<void> {
   const runtime = await createRuntime(options);
+  printSkills(runtime);
+}
+
+function printSkills(runtime: AgentRuntime): void {
   const skills = runtime.listSkills();
 
   if (skills.length === 0) {
@@ -111,6 +195,19 @@ async function listSkills(options: ResolvedCliOptions): Promise<void> {
 
   for (const skill of skills) {
     process.stdout.write(`${skill.id} - ${skill.title}: ${skill.description}\n`);
+  }
+}
+
+function printTools(runtime: AgentRuntime): void {
+  const tools = runtime.listTools();
+
+  if (tools.length === 0) {
+    process.stdout.write("No tools loaded.\n");
+    return;
+  }
+
+  for (const tool of tools) {
+    process.stdout.write(`${tool.name} - ${tool.description}\n`);
   }
 }
 
@@ -188,6 +285,10 @@ function parseArgs(argv: string[]): CliOptions {
 
   const args = [...argv];
   options.command = args.shift();
+
+  if (options.command === "--help" || options.command === "-h") {
+    options.command = "help";
+  }
 
   if (options.command === "run") {
     options.prompt = args.shift();
@@ -331,16 +432,57 @@ function printHelp(): void {
 
 Usage:
   pi run "prompt" [--cwd path] [--config path] [--profile name] [--provider echo|codex-sdk|codex-exec|openrouter|openai] [--model model] [--base-url url] [--codex-profile name] [--codex-sandbox mode] [--extension path] [--skill id]
+  pi tui [--cwd path] [--config path] [--profile name] [--provider echo|codex-sdk|openrouter]
   pi extensions [--extension path]
   pi skills [--extension path]
 
 Examples:
   pi run "summarize this repo"
+  pi tui --profile codex
+  pi tui --profile openrouter --skill codex-goal
   pi run "use my Codex subscription" --profile codex
   pi run "compare providers" --profile openrouter
   pi run "inspect the project" --extension ./examples/extensions/repo-inspector/dist/index.js
   pi run "build an RTK slice" --extension ./extensions/base/dist/index.js --skill rtk
 `);
+}
+
+function printTuiHeader(options: ResolvedCliOptions): void {
+  process.stdout.write([
+    "Personal Pi Setup",
+    `provider: ${options.provider}${options.model ? ` / ${options.model}` : ""}`,
+    `cwd: ${options.cwd}`,
+    "type /help for commands, /exit to quit",
+    ""
+  ].join("\n"));
+}
+
+function printTuiHelp(): void {
+  process.stdout.write([
+    "",
+    "Commands:",
+    "  /help        show this help",
+    "  /status      show provider, cwd, skills, extensions, and tools",
+    "  /extensions  list loaded extensions",
+    "  /skills      list loaded skills",
+    "  /tools       list loaded tools",
+    "  /clear       clear the screen",
+    "  /exit        quit",
+    ""
+  ].join("\n"));
+}
+
+function printRuntimeStatus(options: ResolvedCliOptions, runtime: AgentRuntime): void {
+  process.stdout.write([
+    "",
+    `provider: ${options.provider}`,
+    `model: ${options.model ?? "default"}`,
+    `cwd: ${options.cwd}`,
+    `extensions: ${runtime.listExtensions().map((extension) => extension.id).join(", ") || "none"}`,
+    `skills: ${options.skills.join(", ") || "none"}`,
+    `tools: ${runtime.listTools().map((tool) => tool.name).join(", ") || "none"}`,
+    ""
+  ].join("\n"));
 }
 
 main(process.argv.slice(2)).catch((error: unknown) => {

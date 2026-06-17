@@ -18,6 +18,7 @@ This repo is set up around:
 ```bash
 npm install
 npm run build
+npm run dev -- tui --config pi.config.example.json --profile echo
 npm run dev -- run "summarize this repo" --extension ./examples/extensions/repo-inspector/src/index.ts
 npm run dev -- skills --extension ./extensions/base/src/index.ts
 npm run dev -- run "add a Redux Toolkit slice" --extension ./extensions/base/src/index.ts --skill rtk
@@ -37,6 +38,12 @@ npm run dev -- run "what should I build next?" --provider codex-sdk
 ```
 
 The `codex-sdk` provider uses `@openai/codex-sdk`, so it keeps Codex's existing browser login, cached credentials, token refresh, workspace controls, and subscription access while giving Pi a proper thread-based integration.
+
+Start an interactive Pi session with:
+
+```bash
+npm run dev -- tui --profile codex
+```
 
 ### OpenRouter
 
@@ -73,6 +80,28 @@ npm run dev -- run "use my default profile"
 PI_PROFILE=codex npm run dev -- run "use the Codex SDK profile"
 PI_PROFILE=openrouter npm run dev -- run "try OpenRouter"
 ```
+
+## TUI
+
+`pi tui` is the first interactive surface. It keeps a provider session alive, which means:
+
+- Codex SDK runs on a persistent Codex thread.
+- OpenRouter keeps chat history for the session.
+- Extensions and selected skills are applied to the session prompt.
+
+Available slash commands:
+
+```text
+/help
+/status
+/extensions
+/skills
+/tools
+/clear
+/exit
+```
+
+This is intentionally a simple terminal shell first. The next layer is a richer full-screen TUI with streamed events, file-change panes, command logs, approvals, and a Codex-app-style workspace view.
 
 ## Project Shape
 
@@ -119,7 +148,8 @@ export default defineExtension({
 
 ## Current Roadmap
 
-- Add a real tool-calling loop
+- Add streaming provider events to the TUI
+- Add a full-screen TUI renderer with transcript, activity, and diff panes
 - Add workspace permission policies
 - Add VS Code extension shell
 - Add extension marketplace metadata

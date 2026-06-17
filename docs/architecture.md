@@ -17,7 +17,8 @@ Pi starts as a local coding agent with a deliberately small kernel.
 3. The runtime registers extension tools and merges system instructions.
 4. Selected skills are appended as focused operating-mode instructions.
 5. The provider receives a composed prompt.
-6. Later versions will let the provider request tool calls through the runtime.
+6. `pi run` executes a single provider call; `pi tui` keeps a provider session alive across turns.
+7. Later versions will let the provider request tool calls through the runtime.
 
 ## Extension Contract
 
@@ -70,10 +71,28 @@ Skills should be narrow. Prefer several small skills over one broad "do everythi
 
 Precedence is: CLI flags, environment variables, selected profile, flat config defaults, then `echo`.
 
+## Interactive Surface
+
+`pi tui` is the first agent workspace surface. It is a line-oriented terminal interface with slash commands and persistent provider sessions.
+
+Current scope:
+
+- Persistent Codex SDK thread for `codex-sdk`.
+- Persistent OpenRouter chat history for `openrouter`.
+- Slash commands for status, loaded extensions, skills, tools, clear, and exit.
+
+Next scope:
+
+- Streamed provider events.
+- Activity and command panes.
+- File-change and diff views.
+- Approval prompts.
+- Optional Codex app-server integration for a richer app-like surface.
+
 ## Near-Term Build Plan
 
-1. Implement provider-driven tool calls.
+1. Add streaming provider events to the TUI.
 2. Add explicit permission decisions for shell and file writes.
 3. Store sessions as JSONL for replay and debugging.
 4. Ship a VS Code extension that wraps the CLI/runtime.
-5. Add a first-party extension registry format.
+5. Add a full-screen TUI renderer and optional app-server-backed UI.
