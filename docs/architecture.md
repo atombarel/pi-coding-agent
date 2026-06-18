@@ -1,10 +1,11 @@
 # Architecture
 
-Pi starts as a local coding agent with a deliberately small kernel.
+Pi starts as a personal coding setup with a deliberately small kernel. Mature external UIs do the heavy interactive work; Pi owns provider/profile glue, extensions, skills, and experiments.
 
 ## Principles
 
 - The core owns orchestration, provider calls, extension loading, permissions, and session state.
+- Real daily interfaces should be delegated to mature tools instead of rebuilt locally.
 - Extensions own domain-specific tools, extra instructions, skills, and workflow shortcuts.
 - Providers are adapters. The rest of the agent should not care whether the model is OpenAI, local, hosted, or something else.
 - Provider profiles make switching cheap: `echo` for no-key local testing, `codex-sdk` for Codex OAuth/subscription access through `@openai/codex-sdk`, `codex-exec` as a shell fallback, and `openrouter` for routed multi-model access.
@@ -17,8 +18,9 @@ Pi starts as a local coding agent with a deliberately small kernel.
 3. The runtime registers extension tools and merges system instructions.
 4. Selected skills are appended as focused operating-mode instructions.
 5. The provider receives a composed prompt.
-6. `pi run` executes a single provider call; `pi tui` keeps a provider session alive across turns.
-7. Later versions will let the provider request tool calls through the runtime.
+6. `pi run` executes a single provider call; `pi tui` keeps a lightweight provider session alive across turns.
+7. `pi codex` launches the real Codex interface; `pi opencode` launches the real OpenCode interface.
+8. Later versions will export Pi config/skills into those tools where possible.
 
 ## Extension Contract
 
@@ -71,9 +73,16 @@ Skills should be narrow. Prefer several small skills over one broad "do everythi
 
 Precedence is: CLI flags, environment variables, selected profile, flat config defaults, then `echo`.
 
-## Interactive Surface
+## Real Interfaces
 
-`pi tui` is the first agent workspace surface. It is a line-oriented terminal interface with slash commands and persistent provider sessions.
+Pi deliberately avoids rebuilding a full Claude Code/Codex-style interface.
+
+- `pi codex` launches Codex CLI, which already provides the real Codex TUI and app handoff.
+- `pi opencode` launches OpenCode, which already provides a real terminal/desktop/IDE agent interface with OpenRouter support.
+
+## Experimental Shell
+
+`pi tui` is a line-oriented runtime test shell with slash commands and persistent provider sessions.
 
 Current scope:
 
@@ -83,16 +92,14 @@ Current scope:
 
 Next scope:
 
-- Streamed provider events.
-- Activity and command panes.
-- File-change and diff views.
-- Approval prompts.
-- Optional Codex app-server integration for a richer app-like surface.
+- Config generation for Codex and OpenCode.
+- Skill/instruction export into supported external tool formats.
+- Small workflow launchers that compose provider, cwd, model, and skill choices.
 
 ## Near-Term Build Plan
 
-1. Add streaming provider events to the TUI.
-2. Add explicit permission decisions for shell and file writes.
-3. Store sessions as JSONL for replay and debugging.
-4. Ship a VS Code extension that wraps the CLI/runtime.
-5. Add a full-screen TUI renderer and optional app-server-backed UI.
+1. Make Codex and OpenCode the main daily interfaces.
+2. Generate/sync external tool config from `pi.config.json`.
+3. Add explicit permission decisions for shell and file writes in the experimental runtime.
+4. Store sessions as JSONL for replay and debugging.
+5. Add workflow launchers around common coding tasks.

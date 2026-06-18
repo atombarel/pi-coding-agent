@@ -1,10 +1,11 @@
 # Personal Pi Setup
 
-Personal Pi Setup is the local base for building my own Pi-style coding agent. It keeps the runtime small, makes extensions and skills first-class, and lets me switch between Codex SDK and OpenRouter without rewriting the agent.
+Personal Pi Setup is the local base for my own Pi-style coding workflow. It does not try to rebuild a mature terminal UI from scratch. Instead, it launches real agent interfaces for daily work and keeps a small runtime for experiments, provider profiles, extensions, and skills.
 
 This repo is set up around:
 
 - A TypeScript CLI named `pi`
+- Launchers for real interfaces: Codex CLI and OpenCode
 - A core runtime that composes prompts, loads extensions, registers tools, and talks to provider adapters
 - Primary providers for Codex SDK and OpenRouter
 - A Codex exec fallback for one-shot shell workflows
@@ -18,6 +19,8 @@ This repo is set up around:
 ```bash
 npm install
 npm run build
+npm run dev -- codex
+npm run dev -- opencode
 npm run dev -- tui --config pi.config.example.json --profile echo
 npm run dev -- run "summarize this repo" --extension ./examples/extensions/repo-inspector/src/index.ts
 npm run dev -- skills --extension ./extensions/base/src/index.ts
@@ -28,9 +31,23 @@ The default provider is `echo`, so the command works without API keys.
 
 ## Provider Setup
 
+## Real Interfaces
+
+Use these for actual day-to-day coding sessions:
+
+```bash
+npm run dev -- codex
+npm run dev -- opencode
+```
+
+- `pi codex` launches the real Codex CLI TUI. Use it for Codex OAuth / ChatGPT subscription access.
+- `pi opencode` launches OpenCode. Use it for OpenRouter and other model-provider routing.
+
+If `opencode` is not already installed, `pi opencode` falls back to `npx --yes opencode-ai@latest`.
+
 ### Codex SDK
 
-Use this when I want Pi to run through my Codex OAuth / ChatGPT subscription login.
+Use this for programmatic Codex runs inside the experimental Pi runtime.
 
 ```bash
 codex login
@@ -39,10 +56,10 @@ npm run dev -- run "what should I build next?" --provider codex-sdk
 
 The `codex-sdk` provider uses `@openai/codex-sdk`, so it keeps Codex's existing browser login, cached credentials, token refresh, workspace controls, and subscription access while giving Pi a proper thread-based integration.
 
-Start an interactive Pi session with:
+For the real Codex interface, use:
 
 ```bash
-npm run dev -- tui --profile codex
+npm run dev -- codex
 ```
 
 ### OpenRouter
@@ -52,6 +69,12 @@ Use this when I want routed model access outside the Codex subscription path.
 ```bash
 export OPENROUTER_API_KEY=...
 npm run dev -- run "what should I build next?" --provider openrouter --model anthropic/claude-sonnet-4
+```
+
+For the real OpenRouter-friendly interface, use:
+
+```bash
+npm run dev -- opencode
 ```
 
 ### Codex Exec Fallback
@@ -81,9 +104,9 @@ PI_PROFILE=codex npm run dev -- run "use the Codex SDK profile"
 PI_PROFILE=openrouter npm run dev -- run "try OpenRouter"
 ```
 
-## TUI
+## Experimental Shell
 
-`pi tui` is the first interactive surface. It keeps a provider session alive, which means:
+`pi tui` is not the real interface. It is a lightweight chat/debug shell for testing the Pi runtime. It keeps a provider session alive, which means:
 
 - Codex SDK runs on a persistent Codex thread.
 - OpenRouter keeps chat history for the session.
@@ -101,7 +124,7 @@ Available slash commands:
 /exit
 ```
 
-This is intentionally a simple terminal shell first. The next layer is a richer full-screen TUI with streamed events, file-change panes, command logs, approvals, and a Codex-app-style workspace view.
+The real interface strategy is to use Codex CLI and OpenCode instead of rebuilding them here.
 
 ## Project Shape
 
@@ -148,10 +171,9 @@ export default defineExtension({
 
 ## Current Roadmap
 
-- Add streaming provider events to the TUI
-- Add a full-screen TUI renderer with transcript, activity, and diff panes
+- Keep `pi codex` and `pi opencode` as the main daily interfaces
+- Generate/sync config for Codex and OpenCode from `pi.config.json`
 - Add workspace permission policies
-- Add VS Code extension shell
-- Add extension marketplace metadata
+- Add extension/skill export into Codex/OpenCode-compatible formats where possible
 - Add session storage and replay
-- Add multi-agent roles for planning, implementation, and review
+- Add small glue commands around common workflows

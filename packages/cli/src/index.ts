@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -26,6 +27,7 @@ interface CliOptions {
   codexSandbox?: "read-only" | "workspace-write" | "danger-full-access";
   extensions: string[];
   skills: string[];
+  passthroughArgs: string[];
 }
 
 interface ResolvedCliOptions extends CliOptions {
@@ -65,6 +67,16 @@ async function main(argv: string[]): Promise<void> {
 
   if (options.command === "tui") {
     await runTui(options);
+    return;
+  }
+
+  if (options.command === "codex") {
+    await launchExternalUi("codex", options.passthroughArgs, options.cwd);
+    return;
+  }
+
+  if (options.command === "opencode") {
+    await launchOpenCode(options.passthroughArgs, options.cwd);
     return;
   }
 
@@ -164,6 +176,43 @@ async function runTui(options: ResolvedCliOptions): Promise<void> {
 async function listExtensions(options: ResolvedCliOptions): Promise<void> {
   const runtime = await createRuntime(options);
   printExtensions(runtime);
+}
+
+async function launchOpenCode(args: string[], cwd: string): Promise<void> {
+  try {
+    await launchExternalUi("opencode", args, cwd);
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") {
+      await launchExternalUi("npx", ["--yes", "opencode-ai@latest", ...args], cwd);
+      return;
+    }
+
+    throw error;
+  }
+}
+
+function launchExternalUi(command: string, args: string[], cwd: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: "inherit"
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code, signal) => {
+      if (signal) {
+        reject(new Error(`${command} exited from signal ${signal}.`));
+        return;
+      }
+
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(`${command} exited with code ${code}.`));
+    });
+  });
 }
 
 function printExtensions(runtime: AgentRuntime): void {
@@ -280,7 +329,8 @@ function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     cwd: process.cwd(),
     extensions: [],
-    skills: []
+    skills: [],
+    passthroughArgs: []
   };
 
   const args = [...argv];
@@ -292,6 +342,11 @@ function parseArgs(argv: string[]): CliOptions {
 
   if (options.command === "run") {
     options.prompt = args.shift();
+  }
+
+  if (options.command === "codex" || options.command === "opencode") {
+    options.passthroughArgs = args;
+    return options;
   }
 
   while (args.length > 0) {
@@ -432,11 +487,15 @@ function printHelp(): void {
 
 Usage:
   pi run "prompt" [--cwd path] [--config path] [--profile name] [--provider echo|codex-sdk|codex-exec|openrouter|openai] [--model model] [--base-url url] [--codex-profile name] [--codex-sandbox mode] [--extension path] [--skill id]
+  pi codex [...args]       launch the real Codex TUI/app flow
+  pi opencode [...args]    launch OpenCode for OpenRouter and other providers
   pi tui [--cwd path] [--config path] [--profile name] [--provider echo|codex-sdk|openrouter]
   pi extensions [--extension path]
   pi skills [--extension path]
 
 Examples:
+  pi codex
+  pi opencode
   pi run "summarize this repo"
   pi tui --profile codex
   pi tui --profile openrouter --skill codex-goal
