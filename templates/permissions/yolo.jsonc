@@ -1,0 +1,41 @@
+{
+  "defaultPolicy": {
+    "tools": "allow",
+    "bash": "allow",
+    "mcp": "ask",
+    "skills": "allow",
+    "special": "ask"
+  },
+  "tools": {
+    "*": "allow",
+    "bash": "allow",
+    "read": "allow",
+    "grep": "allow",
+    "find": "allow",
+    "ls": "allow",
+    "edit": "allow",
+    "write": "allow"
+  },
+  "bash": {
+    "*": "allow",
+    "sudo *": "ask",
+    "rm -rf *": "deny",
+    "git reset --hard*": "deny",
+    "git clean -fd*": "deny",
+    "git push *": "ask"
+  },
+  "mcp": {
+    "*": "ask",
+    "mcp_status": "allow",
+    "mcp_list": "allow",
+    "mcp_search": "allow",
+    "mcp_describe": "allow"
+  },
+  "skills": {
+    "*": "allow"
+  },
+  "special": {
+    "doom_loop": "deny",
+    "external_directory": "ask"
+  }
+}

@@ -4,6 +4,9 @@ Personal configuration for [Pi](https://pi.dev/), tuned for day-to-day coding wo
 
 The repository keeps Pi settings, local skills, prompt templates, model recipes, and setup checks in one place so a machine can be made ready with a small number of commands.
 
+It also loads a small RTK integration for token-efficient shell output in Pi sessions.
+Permission and tool-display extensions are installed as project packages so Pi feels closer to Codex/Claude Code in daily use.
+
 ## Quick Start
 
 ```bash
@@ -32,11 +35,13 @@ npx pi --approve -p "summarize this repo"
 .
 ├── .pi/
 │   ├── settings.json
+│   ├── agent/pi-permissions.jsonc
 │   ├── extensions/pi-workbench.ts
 │   ├── skills/
 │   └── prompts/
 ├── templates/
 │   ├── models.openrouter.example.json
+│   ├── permissions/
 │   └── settings.enabled-models.example.json
 ├── scripts/
 │   ├── check-config.mjs
@@ -99,6 +104,89 @@ OPENROUTER_API_KEY=... npm run pi -- --provider openrouter --model moonshotai/ki
 
 OpenRouter credentials can also be saved through `/login` or `~/.pi/agent/auth.json`.
 
+## RTK
+
+This setup installs [`@sherif-fanous/pi-rtk`](https://www.npmjs.com/package/@sherif-fanous/pi-rtk) as a project Pi package:
+
+```json
+{
+  "packages": ["npm:@sherif-fanous/pi-rtk"]
+}
+```
+
+The extension routes Pi bash commands through [`rtk rewrite`](https://github.com/rtk-ai/rtk) when possible, then falls back to normal shell behavior if RTK cannot rewrite a command.
+
+Install RTK locally before relying on it:
+
+```bash
+which rtk
+rtk --version
+```
+
+Inside Pi:
+
+```text
+/rtk status
+/rtk disable
+/rtk enable
+```
+
+Project package installs are cached under `.pi/npm/`, which is intentionally ignored. The package reference in `.pi/settings.json` is the source of truth.
+
+## Permissions
+
+This setup installs [`pi-permission-system`](https://www.npmjs.com/package/pi-permission-system) as a project Pi package. The active policy is:
+
+```text
+.pi/agent/pi-permissions.jsonc
+```
+
+The default mode is `balanced`:
+
+- read/search/list operations are allowed
+- edits and writes ask
+- most shell commands ask
+- common read-only shell commands are allowed
+- `sudo`, `rm -rf`, hard resets, and destructive clean commands are denied
+- external-directory access asks
+
+Switch modes with:
+
+```bash
+npm run permissions:mode -- balanced
+npm run permissions:mode -- review
+npm run permissions:mode -- yolo
+```
+
+Modes:
+
+- `balanced`: normal coding mode with approvals for mutations.
+- `review`: read-only review mode; writes/edits are denied and only read-only shell commands are allowed.
+- `yolo`: edits, writes, and shell are broadly allowed, while the most destructive commands still ask or deny.
+
+Inside Pi:
+
+```text
+/permission-system
+```
+
+Use that modal for runtime controls such as YOLO mode.
+
+## Tool Display
+
+This setup installs [`pi-tool-display`](https://www.npmjs.com/package/pi-tool-display) as a project Pi package. It gives Pi a more compact, OpenCode-style tool display with better edit/write diffs and cleaner tool output rendering.
+
+Inside Pi:
+
+```text
+/tool-display
+/tool-display preset opencode
+/tool-display preset balanced
+/tool-display preset verbose
+```
+
+The package defaults are used initially. Runtime config is owned by Pi under `~/.pi/agent/extensions/pi-tool-display/`.
+
 ## Model Files
 
 Pi's custom provider and model definitions live at:
@@ -148,6 +236,9 @@ Paths in [`.pi/settings.json`](.pi/settings.json) resolve relative to `.pi`.
 Current resources:
 
 - `/pi-status`: shows the personal setup status and provider lanes.
+- `/rtk`: controls RTK command rewriting for the current Pi session.
+- `/permission-system`: opens permission settings and YOLO controls.
+- `/tool-display`: controls compact tool rendering and diff display.
 - `plan` skill: short planning mode for ambiguous work.
 - `review` skill: findings-first code review mode.
 - `provider-smoke` prompt: small read-only prompt for comparing providers.

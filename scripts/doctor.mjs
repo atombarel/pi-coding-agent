@@ -14,7 +14,11 @@ const piCommand = existsSync(localPi) ? localPi : "pi";
 const pi = spawnSync(piCommand, ["--version"], { encoding: "utf8" });
 add("pi binary", pi.status === 0, pi.stdout.trim() || pi.stderr.trim() || "not found");
 
+const rtk = spawnSync("rtk", ["--version"], { encoding: "utf8" });
+add("rtk binary", rtk.status === 0, rtk.stdout.trim() || rtk.stderr.trim() || "not found", false);
+
 add("project settings", existsSync(".pi/settings.json"), ".pi/settings.json");
+add("permission policy", existsSync(".pi/agent/pi-permissions.jsonc"), ".pi/agent/pi-permissions.jsonc");
 add("project extension", existsSync(".pi/extensions/pi-workbench.ts"), ".pi/extensions/pi-workbench.ts");
 add("project skills", existsSync(".pi/skills"), ".pi/skills");
 

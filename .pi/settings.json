@@ -35,5 +35,10 @@
   "prompts": [
     "prompts"
   ],
-  "enableSkillCommands": true
+  "enableSkillCommands": true,
+  "packages": [
+    "npm:@sherif-fanous/pi-rtk",
+    "npm:pi-permission-system",
+    "npm:pi-tool-display"
+  ]
 }

@@ -5,8 +5,12 @@ const root = process.cwd();
 const jsonFiles = [
   "package.json",
   ".pi/settings.json",
+  ".pi/agent/pi-permissions.jsonc",
   "templates/models.openrouter.example.json",
-  "templates/settings.enabled-models.example.json"
+  "templates/settings.enabled-models.example.json",
+  "templates/permissions/balanced.jsonc",
+  "templates/permissions/review.jsonc",
+  "templates/permissions/yolo.jsonc"
 ];
 
 for (const file of jsonFiles) {

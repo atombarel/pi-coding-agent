@@ -9,6 +9,7 @@
     "check": "node scripts/check-config.mjs && pi --version",
     "models": "pi --list-models",
     "models:core": "pi --list-models openai-codex && pi --list-models github-copilot && pi --list-models openrouter",
+    "permissions:mode": "node scripts/permission-mode.mjs",
     "login": "pi"
   },
   "devDependencies": {
