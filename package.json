@@ -10,6 +10,7 @@
     "models": "pi --list-models",
     "models:core": "pi --list-models openai-codex && pi --list-models github-copilot && pi --list-models openrouter",
     "permissions:mode": "node scripts/permission-mode.mjs",
+    "tool-display:preset": "node scripts/tool-display-preset.mjs",
     "login": "pi"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@ Personal configuration for [Pi](https://pi.dev/), tuned for day-to-day coding wo
 The repository keeps Pi settings, local skills, prompt templates, model recipes, and setup checks in one place so a machine can be made ready with a small number of commands.
 
 It also loads a small RTK integration for token-efficient shell output in Pi sessions.
-Permission and tool-display extensions are installed as project packages so Pi feels closer to Codex/Claude Code in daily use.
+Permission, tool-display, and theme resources are installed as project configuration so Pi feels closer to Codex/Claude Code in daily use.
 
 ## Quick Start
 
@@ -37,11 +37,13 @@ npx pi --approve -p "summarize this repo"
 │   ├── settings.json
 │   ├── agent/pi-permissions.jsonc
 │   ├── extensions/pi-workbench.ts
+│   ├── themes/pi-studio-dark.json
 │   ├── skills/
 │   └── prompts/
 ├── templates/
 │   ├── models.openrouter.example.json
 │   ├── permissions/
+│   ├── tool-display/
 │   └── settings.enabled-models.example.json
 ├── scripts/
 │   ├── check-config.mjs
@@ -185,7 +187,40 @@ Inside Pi:
 /tool-display preset verbose
 ```
 
-The package defaults are used initially. Runtime config is owned by Pi under `~/.pi/agent/extensions/pi-tool-display/`.
+The screenshot-friendly default for this setup is the balanced preset:
+
+```bash
+npm run tool-display:preset -- balanced
+```
+
+That writes:
+
+```text
+~/.pi/agent/extensions/pi-tool-display/config.json
+```
+
+Balanced mode keeps tool calls much tighter by rendering read output as summaries, search output as counts, MCP output as summaries, and bash output as line counts. Restart Pi or run `/reload` after changing it.
+
+## Theme
+
+The active project theme is:
+
+```text
+.pi/themes/pi-studio-dark.json
+```
+
+It uses warm neutral surfaces, a teal accent, and a neutral completed-tool background. Success, warning, and error colors are still available as text accents and diff colors.
+
+Theme loading is enabled from `.pi/settings.json`:
+
+```json
+{
+  "theme": "pi-studio-dark",
+  "themes": ["themes"]
+}
+```
+
+Restart Pi after changing the selected theme. Edits to an already loaded theme can usually be refreshed with `/reload`.
 
 ## Model Files
 
@@ -229,7 +264,8 @@ Paths in [`.pi/settings.json`](.pi/settings.json) resolve relative to `.pi`.
 {
   "extensions": ["extensions/pi-workbench.ts"],
   "skills": ["skills"],
-  "prompts": ["prompts"]
+  "prompts": ["prompts"],
+  "themes": ["themes"]
 }
 ```
 

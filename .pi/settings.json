@@ -2,7 +2,7 @@
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "high",
-  "theme": "dark",
+  "theme": "pi-studio-dark",
   "quietStartup": false,
   "doubleEscapeAction": "tree",
   "treeFilterMode": "default",
@@ -34,6 +34,9 @@
   ],
   "prompts": [
     "prompts"
+  ],
+  "themes": [
+    "themes"
   ],
   "enableSkillCommands": true,
   "packages": [
