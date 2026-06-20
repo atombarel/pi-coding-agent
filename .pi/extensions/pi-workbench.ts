@@ -24,6 +24,7 @@ export default function piWorkbench(pi: ExtensionAPI) {
         [
           "Personal Pi setup is active.",
           "Main lanes: openai-codex, github-copilot, openrouter.",
+          "Thinking level is shown in the footer next to the model; Shift+Tab cycles it.",
           "Use /model for switching and /login for subscription/API auth."
         ].join("\n"),
         "info"

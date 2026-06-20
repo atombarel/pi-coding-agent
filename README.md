@@ -74,6 +74,43 @@ The local binary is also available through `npx`:
 npx pi --provider openai-codex
 ```
 
+## Thinking Level
+
+The project default is:
+
+```json
+{
+  "defaultThinkingLevel": "high"
+}
+```
+
+In the Pi TUI, the active thinking level is shown in the footer next to the active model, for example:
+
+```text
+(openai-codex) gpt-5.5 • high
+```
+
+If the active model supports reasoning, cycle levels with `Shift+Tab`. Valid CLI/config levels are:
+
+```text
+off, minimal, low, medium, high, xhigh
+```
+
+You can also set thinking explicitly at launch:
+
+```bash
+npm run pi -- --thinking high
+npm run pi -- --model openai-codex/gpt-5.5:high
+```
+
+For model cycling, append the level to each pattern in `enabledModels`, as in:
+
+```json
+"openai-codex/gpt-5.5:high"
+```
+
+`pi --list-models` only shows whether a model supports thinking; it does not show your current selected thinking level.
+
 ## Providers
 
 ### OpenAI Codex
