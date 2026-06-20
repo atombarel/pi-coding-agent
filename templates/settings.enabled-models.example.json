@@ -1,6 +1,14 @@
 {
   "enabledModels": [
-    "openai-codex/*:high",
+    "openai-codex/gpt-5.5:high",
+    "openai-codex/gpt-5.4:high",
+    "openai-codex/gpt-5.4-mini:high",
+    "openai-codex/gpt-5.3-codex-spark:high",
+    "openai/gpt-5.5:high",
+    "openai/gpt-5.5-pro:high",
+    "openai/gpt-5.4:high",
+    "openai/gpt-5.4-mini:high",
+    "openai/gpt-5.4-nano:low",
     "github-copilot/*:high",
     "openrouter/moonshotai/kimi-k2.6:high",
     "openrouter/anthropic/claude-sonnet-4.5:high",

@@ -49,6 +49,27 @@ if (!Array.isArray(settings.themes) || !settings.themes.includes("themes")) {
   throw new Error("Expected .pi/settings.json to load the project themes directory.");
 }
 
+const enabledModelsTemplate = JSON.parse(
+  await readFile(path.join(root, "templates/settings.enabled-models.example.json"), "utf8")
+);
+const expectedEnabledModels = [
+  "openai-codex/gpt-5.5:high",
+  "openai-codex/gpt-5.4:high",
+  "openai-codex/gpt-5.4-mini:high",
+  "openai-codex/gpt-5.3-codex-spark:high",
+  "openai/gpt-5.5:high",
+  "openai/gpt-5.5-pro:high",
+  "openai/gpt-5.4:high",
+  "openai/gpt-5.4-mini:high",
+  "openai/gpt-5.4-nano:low"
+];
+
+for (const modelPattern of expectedEnabledModels) {
+  if (!enabledModelsTemplate.enabledModels?.includes(modelPattern)) {
+    throw new Error(`Expected enabled model template to include ${modelPattern}`);
+  }
+}
+
 const expectedPackages = [
   "npm:@sherif-fanous/pi-rtk@0.6.0",
   "npm:@narumitw/pi-plan-mode@0.5.0",

@@ -90,6 +90,25 @@ Authenticate from inside Pi:
 
 Choose ChatGPT Plus/Pro (Codex). Pi stores and refreshes credentials in `~/.pi/agent/auth.json`.
 
+This is the default lane for subscription-backed OpenAI models. In Pi `0.79.8`, this provider exposes:
+
+```text
+gpt-5.5
+gpt-5.4
+gpt-5.4-mini
+gpt-5.3-codex-spark
+```
+
+### OpenAI API
+
+Use this lane when you want direct OpenAI API-key models instead of ChatGPT/Codex subscription auth:
+
+```bash
+OPENAI_API_KEY=... npm run pi -- --provider openai --model gpt-5.5
+```
+
+The model-cycling template includes GPT-5.5, GPT-5.5 Pro, GPT-5.4, GPT-5.4 mini, and GPT-5.4 nano. Actual access depends on the OpenAI account and API key.
+
 ### GitHub Copilot
 
 ```bash
@@ -276,6 +295,11 @@ into either project settings or global settings:
 .pi/settings.json
 ~/.pi/agent/settings.json
 ```
+
+The example includes two OpenAI lanes:
+
+- `openai-codex/...`: ChatGPT/Codex subscription auth through Pi `/login`.
+- `openai/...`: direct OpenAI API-key models through `OPENAI_API_KEY`.
 
 ## Local Resources
 
