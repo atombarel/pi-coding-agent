@@ -9,15 +9,19 @@ function add(name, ok, detail, required = true) {
   checks.push({ name, ok, detail, required });
 }
 
+function commandOutput(result, fallback) {
+  return result.stdout?.trim() || result.stderr?.trim() || fallback;
+}
+
 const localPi = path.join(process.cwd(), "node_modules", ".bin", "pi");
 const piCommand = existsSync(localPi) ? localPi : "pi";
 const themeName = "pi-studio-dark";
 const themePath = ".pi/themes/pi-studio-dark.json";
 const pi = spawnSync(piCommand, ["--version"], { encoding: "utf8" });
-add("pi binary", pi.status === 0, pi.stdout.trim() || pi.stderr.trim() || "not found");
+add("pi binary", pi.status === 0, commandOutput(pi, "not found"));
 
 const rtk = spawnSync("rtk", ["--version"], { encoding: "utf8" });
-add("rtk binary", rtk.status === 0, rtk.stdout.trim() || rtk.stderr.trim() || "not found", false);
+add("rtk binary", rtk.status === 0, commandOutput(rtk, "not found"), false);
 
 add("project settings", existsSync(".pi/settings.json"), ".pi/settings.json");
 add("permission policy", existsSync(".pi/agent/pi-permissions.jsonc"), ".pi/agent/pi-permissions.jsonc");
@@ -76,7 +80,7 @@ const trackedSensitive = spawnSync(
 );
 
 if (trackedSensitive.status === 0) {
-  const tracked = trackedSensitive.stdout.trim();
+  const tracked = trackedSensitive.stdout?.trim() ?? "";
   add(
     "tracked sensitive runtime files",
     tracked.length === 0,
