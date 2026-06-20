@@ -35,7 +35,9 @@ const required = [
   ".pi/extensions/pi-workbench.ts",
   ".pi/skills/plan/SKILL.md",
   ".pi/skills/review/SKILL.md",
-  ".pi/prompts/provider-smoke.md"
+  ".pi/prompts/provider-smoke.md",
+  "scripts/install-or-update.mjs",
+  "scripts/install-or-update.zsh"
 ];
 
 await Promise.all(required.map((file) => access(path.join(root, file))));

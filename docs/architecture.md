@@ -18,10 +18,30 @@ This repo owns:
 
 - personal defaults
 - project-local Pi resources
+- no-clone install/update bootstrap
 - small extensions
 - reusable skills
 - provider and model recipes
 - setup checks
+
+## No-Clone Install
+
+The supported machine setup path is:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/atombarel/personal-pi-setup/main/scripts/install-or-update.zsh | zsh
+```
+
+The shell bootstrap downloads a temporary GitHub archive for the selected repo ref and runs the Node installer from that snapshot. It does not create or maintain a Git checkout.
+
+The installer owns these global Pi files:
+
+- `~/.pi/agent/settings.json`, merged with backups
+- `~/.pi/agent/pi-permissions.jsonc`, copied from `templates/permissions/`
+- `~/.pi/agent/extensions/pi-tool-display/config.json`, copied from `templates/tool-display/`
+- `~/.pi/agent/personal-pi-setup/`, replaced with repo-managed extensions, skills, prompts, themes, templates, and docs
+
+The installer does not copy provider credentials, model overrides, session files, or `.env` files.
 
 ## Provider Lanes
 

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "pi": "pi",
+    "install:update": "node scripts/install-or-update.mjs --source .",
+    "install:check": "zsh -lc 'tmp=$(mktemp -d \"${TMPDIR:-/tmp}/personal-pi-install-check.XXXXXX\"); node scripts/install-or-update.mjs --source . --skip-pi-install --skip-package-install --agent-dir \"$tmp\"; rc=$?; rm -rf \"$tmp\"; exit $rc'",
     "doctor": "node scripts/doctor.mjs",
     "check": "node scripts/check-config.mjs && pi --version",
     "audit": "npm audit --audit-level=moderate",

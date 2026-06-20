@@ -2,31 +2,36 @@
 
 Personal configuration for [Pi](https://pi.dev/), tuned for day-to-day coding work across Codex, GitHub Copilot, and OpenRouter-backed models.
 
-The repository keeps Pi settings, local skills, prompt templates, model recipes, and setup checks in one place so a machine can be made ready with a small number of commands.
+The repository keeps Pi settings, local skills, prompt templates, model recipes, and setup checks in one place so a machine can be made ready with one install/update command.
 
 It also loads a small RTK integration for token-efficient shell output in Pi sessions.
-Permission, tool-display, and theme resources are installed as project configuration so Pi feels closer to Codex/Claude Code in daily use.
+Permission, tool-display, and theme resources are installed from this repo so Pi feels closer to Codex/Claude Code in daily use.
 
 ## Quick Start
 
 ```bash
-npm install
-npm run check
-npm run pi
+curl -fsSL https://raw.githubusercontent.com/atombarel/personal-pi-setup/main/scripts/install-or-update.zsh | zsh
+pi
 ```
 
-On the first interactive launch, trust the project so Pi loads the local `.pi` resources:
+Run the same command later to update the machine from the latest repo reference. It does not clone this repository or leave a Git checkout behind; it downloads a temporary archive snapshot, installs the repo-managed Pi resources into `~/.pi/agent`, installs the pinned Pi CLI and Pi packages, verifies the result, then removes the snapshot.
 
-```text
-/trust
+Use a specific branch, tag, or commit when needed:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/atombarel/personal-pi-setup/main/scripts/install-or-update.zsh | PI_SETUP_REF=main zsh
 ```
 
-Restart Pi after saving the trust decision.
+If you are already inside a checkout of this repo, the equivalent local command is:
+
+```bash
+npm run install:update
+```
 
 For a one-off non-interactive run:
 
 ```bash
-npx pi --approve -p "summarize this repo"
+pi -p "summarize this repo"
 ```
 
 ## Layout
@@ -54,24 +59,24 @@ npx pi --approve -p "summarize this repo"
 
 ## Running Pi
 
-Default project settings use `openai-codex` with high thinking:
+Default installed settings use `openai-codex` with high thinking:
 
 ```bash
-npm run pi
+pi
 ```
 
-Pass Pi flags after `--`:
+Pass Pi flags directly:
+
+```bash
+pi --provider openai-codex
+pi --provider github-copilot
+OPENROUTER_API_KEY=... pi --provider openrouter --model moonshotai/kimi-k2.6
+```
+
+From a repo checkout, `npm run pi` still works:
 
 ```bash
 npm run pi -- --provider openai-codex
-npm run pi -- --provider github-copilot
-OPENROUTER_API_KEY=... npm run pi -- --provider openrouter --model moonshotai/kimi-k2.6
-```
-
-The local binary is also available through `npx`:
-
-```bash
-npx pi --provider openai-codex
 ```
 
 ## Thinking Level
@@ -99,8 +104,8 @@ off, minimal, low, medium, high, xhigh
 You can also set thinking explicitly at launch:
 
 ```bash
-npm run pi -- --thinking high
-npm run pi -- --model openai-codex/gpt-5.5:high
+pi --thinking high
+pi --model openai-codex/gpt-5.5:high
 ```
 
 For model cycling, append the level to each pattern in `enabledModels`, as in:
@@ -116,7 +121,7 @@ For model cycling, append the level to each pattern in `enabledModels`, as in:
 ### OpenAI Codex
 
 ```bash
-npm run pi -- --provider openai-codex
+pi --provider openai-codex
 ```
 
 Authenticate from inside Pi:
@@ -141,7 +146,7 @@ gpt-5.3-codex-spark
 Use this lane when you want direct OpenAI API-key models instead of ChatGPT/Codex subscription auth:
 
 ```bash
-OPENAI_API_KEY=... npm run pi -- --provider openai --model gpt-5.5
+OPENAI_API_KEY=... pi --provider openai --model gpt-5.5
 ```
 
 The model-cycling template includes GPT-5.5, GPT-5.5 Pro, GPT-5.4, GPT-5.4 mini, and GPT-5.4 nano. Actual access depends on the OpenAI account and API key.
@@ -149,7 +154,7 @@ The model-cycling template includes GPT-5.5, GPT-5.5 Pro, GPT-5.4, GPT-5.4 mini,
 ### GitHub Copilot
 
 ```bash
-npm run pi -- --provider github-copilot --models "github-copilot/*"
+pi --provider github-copilot --models "github-copilot/*"
 ```
 
 Authenticate through `/login`, then choose GitHub Copilot. If a model is unavailable, enable it from the VS Code Copilot Chat model selector first.
@@ -157,7 +162,7 @@ Authenticate through `/login`, then choose GitHub Copilot. If a model is unavail
 ### OpenRouter
 
 ```bash
-OPENROUTER_API_KEY=... npm run pi -- --provider openrouter --model moonshotai/kimi-k2.6
+OPENROUTER_API_KEY=... pi --provider openrouter --model moonshotai/kimi-k2.6
 ```
 
 OpenRouter credentials can also be saved through `/login` or `~/.pi/agent/auth.json`.
@@ -340,7 +345,24 @@ The example includes two OpenAI lanes:
 
 ## Local Resources
 
-Paths in [`.pi/settings.json`](.pi/settings.json) resolve relative to `.pi`.
+The no-clone installer copies repo-managed resources under:
+
+```text
+~/.pi/agent/personal-pi-setup/
+```
+
+It adds those paths to global Pi settings in `~/.pi/agent/settings.json`:
+
+```json
+{
+  "extensions": ["personal-pi-setup/extensions/pi-workbench.ts"],
+  "skills": ["personal-pi-setup/skills"],
+  "prompts": ["personal-pi-setup/prompts"],
+  "themes": ["personal-pi-setup/themes"]
+}
+```
+
+In a repo checkout, paths in [`.pi/settings.json`](.pi/settings.json) resolve relative to `.pi`.
 
 ```json
 {
@@ -364,12 +386,13 @@ Current resources:
 ## Checks
 
 ```bash
+npm run install:check
 npm run check
 npm run audit
 npm run doctor
 ```
 
-`check` validates local config, confirms the Pi binary version, and fails if sensitive Pi runtime paths are tracked by Git. `audit` blocks moderate-or-higher npm advisories. `doctor` also reports optional auth/model state, including whether `~/.pi/agent/models.json` and `OPENROUTER_API_KEY` are present, without printing secret values.
+`install:check` validates the no-clone global install path in a temporary Pi agent directory. `check` validates local config, confirms the Pi binary version, and fails if sensitive Pi runtime paths are tracked by Git. `audit` blocks moderate-or-higher npm advisories. `doctor` also reports optional auth/model state, including whether `~/.pi/agent/models.json` and `OPENROUTER_API_KEY` are present, without printing secret values.
 
 ## Enterprise Readiness
 

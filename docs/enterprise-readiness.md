@@ -12,6 +12,7 @@ This project is enterprise-ready when it remains a thin, auditable setup layer a
 ## Current Posture
 
 - Provider auth is delegated to Pi `/login` or environment-backed provider config.
+- The supported setup path is a no-clone archive bootstrap that installs repo-managed resources into `~/.pi/agent` and can be rerun for updates.
 - The default provider lane is `openai-codex`, preserving Codex subscription auth as a first-class path.
 - OpenRouter remains a separate provider lane with `data_collection` denied in the example model overrides that support it.
 - Permission policies are explicit, with `balanced`, `review`, and `yolo` templates.
@@ -53,11 +54,12 @@ Use this checklist for meaningful changes:
 
 1. Explain whether the change is a Pi configuration change, a local extension change, or documentation only.
 2. Verify that it does not replace upstream Pi runtime behavior.
-3. Run `npm run check`.
-4. Run `npm run audit`.
-5. Run `npm run doctor`.
-6. Review `git diff --check`.
-7. Confirm no ignored runtime state was force-added.
+3. Run `npm run install:check`.
+4. Run `npm run check`.
+5. Run `npm run audit`.
+6. Run `npm run doctor`.
+7. Review `git diff --check`.
+8. Confirm no ignored runtime state was force-added.
 
 ## Residual Risks
 
